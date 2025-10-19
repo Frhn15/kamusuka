@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Peta Pelacakan Realtime</title>
+  <title>Peta Pelacakan Realtime (Monitor)</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
@@ -16,25 +16,40 @@
 
   <script>
     const map = L.map('map').setView([0, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
     const socket = io();
     const markers = {};
+    const paths = {}; // polyline per IP
 
     socket.on('update_location', data => {
       const { user, lat, lon, time } = data;
+      if (!lat || !lon) return;
 
+      const position = [parseFloat(lat), parseFloat(lon)];
+
+      // Marker
       if (markers[user]) {
-        markers[user].setLatLng([lat, lon]);
+        markers[user].setLatLng(position);
       } else {
-        markers[user] = L.marker([lat, lon]).addTo(map)
-          .bindPopup(`<b>${user}</b><br>${time}`);
+        markers[user] = L.marker(position).addTo(map)
+          .bindPopup(`<b>${user}</b><br>${time}<br>
+            <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">📍 Buka di Google Maps</a>`);
       }
 
-      markers[user].bindPopup(`<b>${user}</b><br>${time}`).openPopup();
-      map.setView([lat, lon], 13);
+      // Update popup konten setiap update
+      markers[user].bindPopup(`<b>${user}</b><br>${time}<br>
+        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">📍 Buka di Google Maps</a>`);
+
+      // Path / rute
+      if (!paths[user]) {
+        paths[user] = L.polyline([position], { color: '#3388ff' }).addTo(map);
+      } else {
+        paths[user].addLatLng(position);
+      }
+
+      // zoom to latest
+      map.setView(position, 14);
     });
   </script>
 </body>

