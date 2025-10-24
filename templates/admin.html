@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>Admin Dashboard 💖</title>
+  <title>📦 Admin Dashboard 💖</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
@@ -127,8 +127,8 @@
     <div id="clientsList">Memuat...</div>
 
     <h4>Kirim Pesan ke Client</h4>
-    <input id="notifClientId" placeholder="client_id">
-    <textarea id="notifMsg" placeholder="Tulis pesan sayang..."></textarea>
+    <input id="notifClientId" placeholder="package_id / client_id">
+    <textarea id="notifMsg" placeholder="Tulis pesan..."></textarea>
     <button id="sendNotif" class="btn">Kirim Pesan 💌</button>
 
     <div id="streamBox">
@@ -152,80 +152,8 @@
 
     const clients = {};
     const markers = {};
-    let adminMarker = null;
 
-    // === Fungsi bantu ===
-    async function getIpLocation() {
-      try {
-        const res = await fetch("https://ipapi.co/json/");
-        const j = await res.json();
-        return { lat: j.latitude, lon: j.longitude, source: "ip" };
-      } catch {
-        return null;
-      }
-    }
-
-    function updateAdminMarker(lat, lon) {
-      const pos = [lat, lon];
-      if (!adminMarker) {
-        adminMarker = L.marker(pos, {
-          icon: L.divIcon({
-            html: '💞',
-            className: 'adminMarker',
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
-          })
-        }).addTo(map).bindPopup('<b>Admin (kamu)</b>');
-        map.setView(pos, 14);
-      } else {
-        adminMarker.setLatLng(pos);
-      }
-    }
-
-    function sendAdminLocation(lat, lon) {
-      socket.emit("location_update", {
-        client_id: "admin",
-        latitude: lat,
-        longitude: lon,
-        last_seen: Date.now()
-      });
-    }
-
-    // === Mulai tracking lokasi admin ===
-    async function startTrackingAdmin() {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.watchPosition(
-          pos => {
-            const { latitude, longitude, accuracy } = pos.coords;
-            updateAdminMarker(latitude, longitude);
-            sendAdminLocation(latitude, longitude);
-            console.log(`📍 GPS: ${latitude}, ${longitude} (akurasi ±${Math.round(accuracy)}m)`);
-          },
-          async err => {
-            console.warn("GPS gagal:", err.message);
-            const ipLoc = await getIpLocation();
-            if (ipLoc) {
-              updateAdminMarker(ipLoc.lat, ipLoc.lon);
-              sendAdminLocation(ipLoc.lat, ipLoc.lon);
-              console.log("📍 Fallback ke lokasi IP");
-            } else {
-              alert("Tidak bisa mendapatkan lokasi admin 😿");
-            }
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-      } else {
-        const ipLoc = await getIpLocation();
-        if (ipLoc) {
-          updateAdminMarker(ipLoc.lat, ipLoc.lon);
-          sendAdminLocation(ipLoc.lat, ipLoc.lon);
-        } else {
-          alert("Browser tidak mendukung lokasi 😢");
-        }
-      }
-    }
-
-    // === Render daftar client ===
+    // === Render daftar paket/klien ===
     function renderClients() {
       const el = document.getElementById("clientsList");
       el.innerHTML = "";
@@ -238,23 +166,28 @@
         const c = clients[id];
         const div = document.createElement("div");
         div.className = "client";
+        const imgSrc = c.last_image ? `/uploads/${c.last_image}` : '/static/img/kucing.jpeg';
+        const lastSeen = c.last_seen ? new Date(c.last_seen).toLocaleString() : "—";
         div.innerHTML = `
           <div class="client-header">
-            <img src="${c.last_image ? `/uploads/${c.last_image}` : '/static/img/kucing.jpeg'}" alt="client">
+            <img src="${imgSrc}" alt="client">
             <div class="meta">
               <b>${id}</b><br>
-              Terakhir aktif: ${c.last_seen ? new Date(c.last_seen).toLocaleString() : "—"}
+              Terakhir aktif: ${lastSeen}
             </div>
           </div>
           <div class="client-actions">
-            <button class="btn" onclick="window.open('https://www.google.com/maps?q=${c.lat},${c.lon}', '_blank')">Lihat di Google Maps 🌍</button>
+            ${c.lat && c.lon ? 
+              `<button class="btn" onclick="window.open('https://www.google.com/maps?q=${c.lat},${c.lon}', '_blank')">Lihat di Maps 🌍</button>`
+              : "<button class='btn' disabled>Tidak ada lokasi</button>"
+            }
           </div>
         `;
         el.appendChild(div);
       });
     }
 
-    // === Ambil data client awal ===
+    // === Ambil snapshot awal ===
     fetch("/clients")
       .then(r => r.json())
       .then(js => {
@@ -280,13 +213,16 @@
     // === Lokasi client realtime ===
     socket.on("location_update", data => {
       const id = data.client_id;
-      const lat = parseFloat(data.latitude);
-      const lon = parseFloat(data.longitude);
+      const lat = parseFloat(data.lat ?? data.latitude);
+      const lon = parseFloat(data.lon ?? data.longitude);
       if (isNaN(lat) || isNaN(lon)) return;
+
       if (!clients[id]) clients[id] = {};
-      clients[id].lat = lat;
-      clients[id].lon = lon;
-      clients[id].last_seen = data.last_seen;
+      Object.assign(clients[id], {
+        lat, lon,
+        last_seen: data.last_seen
+      });
+
       if (!markers[id]) {
         markers[id] = L.marker([lat, lon], {
           title: id,
@@ -303,25 +239,22 @@
       renderClients();
     });
 
-    // === Stream kamera client ===
+    // === Stream kamera realtime ===
     socket.on("stream_frame", data => {
       document.getElementById("streamFrame").src = data.image;
     });
 
-    // === Kirim pesan ke client ===
+    // === Pesan notifikasi admin -> client ===
     document.getElementById("sendNotif").addEventListener("click", () => {
       const clientId = document.getElementById("notifClientId").value.trim();
       const message = document.getElementById("notifMsg").value.trim();
-      if (!clientId || !message) return alert("Isi client_id dan pesan!");
+      if (!clientId || !message) return alert("Isi ID dan pesan!");
       socket.emit("admin_send_notification", { client_id: clientId, message });
     });
 
     socket.on("notification_sent", data => {
-      alert("Pesan dikirim ke " + data.client_id + " 💌");
+      alert("Pesan terkirim ke " + data.client_id + " 💌");
     });
-
-    // Jalankan tracking admin
-    startTrackingAdmin();
   </script>
 </body>
 </html>
