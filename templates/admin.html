@@ -2,142 +2,90 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>📦 Admin Dashboard 💖</title>
+  <title>🧠 Admin Tracker Console</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
       margin: 0;
-      font-family: "Poppins", sans-serif;
+      font-family: "Courier New", monospace;
       display: flex;
       height: 100vh;
-      background: linear-gradient(135deg, #ffe1eb, #ffc1dc);
-      color: #333;
+      background: radial-gradient(circle at top, #000, #001b00);
+      color: #00ff9d;
+      overflow: hidden;
     }
     #left {
-      width: 380px;
-      background: rgba(255, 255, 255, 0.35);
-      backdrop-filter: blur(10px);
-      border-right: 2px solid rgba(255, 255, 255, 0.4);
-      padding: 16px;
+      width: 360px;
+      background: rgba(0, 20, 0, 0.95);
+      border-right: 2px solid #00ff88;
+      padding: 14px;
       overflow-y: auto;
-      box-shadow: 4px 0 12px rgba(255, 100, 150, 0.2);
+      box-shadow: 0 0 20px rgba(0, 255, 128, 0.2);
     }
     h3, h4 {
       text-align: center;
       margin: 8px 0;
-      color: #e91e63;
+      color: #00ff99;
+      text-shadow: 0 0 8px #00ff88;
     }
     .client {
+      background: rgba(0, 40, 0, 0.7);
+      border: 1px solid #00ff66;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 0 10px rgba(0,255,150,0.12);
+      transition: all 0.25s;
       display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 10px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.7);
-      margin-bottom: 12px;
-      box-shadow: 0 3px 8px rgba(255, 120, 160, 0.2);
-      transition: all 0.3s;
+      gap: 8px;
+      align-items: center;
     }
     .client:hover {
-      transform: scale(1.02);
-      background: rgba(255, 255, 255, 0.9);
-    }
-    .client-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      background: rgba(0, 60, 0, 0.95);
+      transform: scale(1.01);
+      box-shadow: 0 0 16px #00ff66;
     }
     .client img {
-      width: 60px;
-      height: 60px;
-      border-radius: 10px;
+      width: 56px;
+      height: 56px;
+      border-radius: 6px;
       object-fit: cover;
-      border: 2px solid #ff69b4;
+      border: 1px solid #00ff99;
     }
     .meta {
       flex: 1;
-      font-size: 13px;
-      color: #444;
-    }
-    .client-actions {
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .btn {
-      flex: 1;
-      padding: 6px 10px;
-      border: none;
-      border-radius: 6px;
-      background: linear-gradient(90deg, #ff4081, #ff80ab);
-      color: #fff;
-      cursor: pointer;
       font-size: 12px;
-      transition: all 0.3s;
+      color: #aaffcc;
+      line-height: 1.2;
     }
-    .btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 10px rgba(255, 64, 129, 0.4);
+    .meta b { color: #ffffff; display: block; margin-bottom: 4px; }
+    .btn {
+      background:#003b1a; color:#00ff99; border:1px solid #00ff99;
+      border-radius:4px; cursor:pointer; font-size:11px;
+      padding:6px; transition:all .18s; text-align:center;
     }
-    #streamBox {
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 12px;
-      padding: 10px;
-      margin-top: 14px;
-      text-align: center;
-      box-shadow: 0 3px 8px rgba(255, 100, 150, 0.2);
-    }
-    #streamFrame {
-      width: 100%;
-      border-radius: 10px;
-      max-height: 420px;
-      background: #000;
-      object-fit: contain;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      font-family: inherit;
-      box-sizing: border-box;
-    }
-    textarea {
-      margin-top: 6px;
-      resize: none;
-    }
-    #sendNotif {
-      width: 100%;
-      margin-top: 6px;
-    }
-    #map {
-      flex: 1;
-      height: 100%;
-    }
-    .leaflet-container {
-      background: #ffeef6;
-    }
+    .btn:hover { background:#00ff99; color:#001b00; box-shadow:0 0 8px #00ff66; }
+    #streamBox { margin-top:12px; }
+    #streamFrame { width:100%; border-radius:8px; max-height:240px; background:#001000; object-fit:cover; box-shadow:0 0 12px rgba(0,255,128,0.2);}
+    #map { flex:1; height:100%; }
+    .pulse { width:18px; height:18px; background:radial-gradient(circle,#00ff99,#003300); border-radius:50%; box-shadow:0 0 15px #00ff99; animation:pulse 1.8s infinite; }
+    @keyframes pulse { 0%{transform:scale(1);opacity:.9}100%{transform:scale(2.5);opacity:0} }
   </style>
 </head>
 <body>
   <div id="left">
-    <h3>💞 Admin Dashboard 💞</h3>
-    <div id="clientsList">Memuat...</div>
-
-    <h4>Kirim Pesan ke Client</h4>
-    <input id="notifClientId" placeholder="package_id / client_id">
-    <textarea id="notifMsg" placeholder="Tulis pesan..."></textarea>
-    <button id="sendNotif" class="btn">Kirim Pesan 💌</button>
-
+    <h3>🧠 ADMIN CONSOLE 🧠</h3>
+    <div id="clientsList">> Menunggu koneksi...</div>
     <div id="streamBox">
-      <h4>Live Kamera</h4>
+      <h4>🎥 STREAM</h4>
       <img id="streamFrame" src="" alt="stream frame">
     </div>
   </div>
 
   <div id="map"></div>
+
+  <audio id="notifSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_347a04c739.mp3" preload="auto"></audio>
 
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -145,115 +93,111 @@
     const socket = io();
     socket.emit("register", { role: "admin" });
 
-    const map = L.map('map').setView([0, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> 💖'
+    // === Map ===
+    const map = L.map('map', { zoomControl: true }).setView([0,0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
     const clients = {};
     const markers = {};
+    const polylines = {};
+    const notifSound = document.getElementById('notifSound');
 
-    // === Render daftar paket/klien ===
+    function playNotif(){ try{ notifSound.currentTime=0; notifSound.play(); }catch(e){} }
+
+    // === Sidebar ===
     function renderClients() {
-      const el = document.getElementById("clientsList");
-      el.innerHTML = "";
-      const keys = Object.keys(clients);
-      if (keys.length === 0) {
-        el.textContent = "(Belum ada klien aktif 💤)";
+      const el = document.getElementById('clientsList');
+      el.innerHTML = '';
+      const ids = Object.keys(clients);
+      if (ids.length === 0) {
+        el.textContent = '> Tidak ada koneksi aktif...';
         return;
       }
-      keys.forEach(id => {
-        const c = clients[id];
-        const div = document.createElement("div");
-        div.className = "client";
-        const imgSrc = c.last_image ? `/uploads/${c.last_image}` : '/static/img/kucing.jpeg';
-        const lastSeen = c.last_seen ? new Date(c.last_seen).toLocaleString() : "—";
-        div.innerHTML = `
-          <div class="client-header">
-            <img src="${imgSrc}" alt="client">
-            <div class="meta">
-              <b>${id}</b><br>
-              Terakhir aktif: ${lastSeen}
-            </div>
-          </div>
-          <div class="client-actions">
-            ${c.lat && c.lon ? 
-              `<button class="btn" onclick="window.open('https://www.google.com/maps?q=${c.lat},${c.lon}', '_blank')">Lihat di Maps 🌍</button>`
-              : "<button class='btn' disabled>Tidak ada lokasi</button>"
-            }
-          </div>
-        `;
-        el.appendChild(div);
+      ids.forEach(id => {
+        const c = clients[id] || {};
+        const lastSeen = c.last_seen ? c.last_seen : '—';
+        const addr = c.address || 'Alamat tidak tersedia';
+        const img = c.last_image ? c.last_image : '/static/img/kucing.jpeg';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'client';
+        wrapper.id = `client-${id}`;
+
+        const imgEl = document.createElement('img');
+        imgEl.src = img;
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.innerHTML = `<b>${id}</b>🕓 ${lastSeen}<br>📍 ${addr}`;
+
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.textContent = '🌍 Buka';
+        btn.onclick = () => {
+          if (!c.latitude || !c.longitude) return;
+          map.flyTo([c.latitude, c.longitude], 15, { animate: true, duration: 1 });
+        };
+
+        wrapper.appendChild(imgEl);
+        wrapper.appendChild(meta);
+        wrapper.appendChild(btn);
+        el.appendChild(wrapper);
       });
     }
 
-    // === Ambil snapshot awal ===
-    fetch("/clients")
-      .then(r => r.json())
-      .then(js => {
-        Object.assign(clients, js);
-        for (const id in clients) {
-          const c = clients[id];
-          if (c.lat && c.lon) {
-            const pos = [c.lat, c.lon];
-            markers[id] = L.marker(pos, {
-              title: id,
-              icon: L.divIcon({
-                html: "💗",
-                className: "customMarker",
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
-              })
-            }).addTo(map).bindPopup(`<b>${id}</b>`);
-          }
-        }
-        renderClients();
-      });
-
-    // === Lokasi client realtime ===
-    socket.on("location_update", data => {
-      const id = data.client_id;
-      const lat = parseFloat(data.lat ?? data.latitude);
-      const lon = parseFloat(data.lon ?? data.longitude);
-      if (isNaN(lat) || isNaN(lon)) return;
-
-      if (!clients[id]) clients[id] = {};
-      Object.assign(clients[id], {
-        lat, lon,
-        last_seen: data.last_seen
-      });
-
+    // === Marker & Rute (Polyline) ===
+    function updateMap(id, lat, lon, address) {
+      const pos = [lat, lon];
       if (!markers[id]) {
-        markers[id] = L.marker([lat, lon], {
-          title: id,
-          icon: L.divIcon({
-            html: "💗",
-            className: "customMarker",
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          })
-        }).addTo(map).bindPopup(`<b>${id}</b>`);
+        markers[id] = L.marker(pos, {
+          icon: L.divIcon({ html: '<div class="pulse"></div>', className: 'customMarker', iconSize: [18,18], iconAnchor:[9,9] })
+        }).addTo(map).bindPopup(`<b>${id}</b><br>${address}`);
+        polylines[id] = L.polyline([pos], { color: '#00ff99', weight: 3, opacity: 0.8 }).addTo(map);
+        playNotif();
       } else {
-        markers[id].setLatLng([lat, lon]);
+        markers[id].setLatLng(pos).bindPopup(`<b>${id}</b><br>${address}`);
+        polylines[id].addLatLng(pos);
       }
       renderClients();
+    }
+
+    // === Fetch awal ===
+    fetch('/clients').then(r=>r.json()).then(js=>{
+      Object.assign(clients, js);
+      for (const id in clients) {
+        const c = clients[id];
+        if (c.latitude && c.longitude) updateMap(id, c.latitude, c.longitude, c.address);
+      }
     });
 
-    // === Stream kamera realtime ===
-    socket.on("stream_frame", data => {
-      document.getElementById("streamFrame").src = data.image;
+    // === Update realtime lokasi ===
+    socket.on('location_update', data => {
+      const id = data.client_id;
+      const lat = parseFloat(data.latitude);
+      const lon = parseFloat(data.longitude);
+      const addr = data.address || 'Alamat tidak diketahui';
+      clients[id] = { ...clients[id], latitude: lat, longitude: lon, address: addr, last_seen: data.last_seen };
+      updateMap(id, lat, lon, addr);
     });
 
-    // === Pesan notifikasi admin -> client ===
-    document.getElementById("sendNotif").addEventListener("click", () => {
-      const clientId = document.getElementById("notifClientId").value.trim();
-      const message = document.getElementById("notifMsg").value.trim();
-      if (!clientId || !message) return alert("Isi ID dan pesan!");
-      socket.emit("admin_send_notification", { client_id: clientId, message });
+    // === Stream Kamera ===
+    socket.on('stream_frame', d => {
+      if (d && d.image) {
+        document.getElementById('streamFrame').src = d.image;
+      }
     });
 
-    socket.on("notification_sent", data => {
-      alert("Pesan terkirim ke " + data.client_id + " 💌");
+    // Klik client → fokus di map
+    document.addEventListener('click', e => {
+      const wrapper = e.target.closest('.client');
+      if (!wrapper) return;
+      const id = wrapper.id.replace('client-', '');
+      if (markers[id]) {
+        markers[id].openPopup();
+        map.flyTo(markers[id].getLatLng(), 14, { animate: true, duration: 0.7 });
+      }
     });
   </script>
 </body>
