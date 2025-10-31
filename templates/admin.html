@@ -53,75 +53,83 @@
 
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const socket = io();
-    const map = L.map('map').setView([0, 0], 2);
+ <script>
+  const socket = io();
+  const map = L.map('map').setView([0, 0], 2);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-    const markers = {};
-    const routes = {};
+  const markers = {};
+  const routes = {};
 
-    function updateMarker(client_id, lat, lon, time) {
-      if (!markers[client_id]) {
-        const marker = L.marker([lat, lon]).addTo(map);
-        markers[client_id] = marker;
+  // tampilkan status
+  const statusBox = document.getElementById('status');
+
+  function updateMarker(client_id, lat, lon, time) {
+    if (!markers[client_id]) {
+      const marker = L.marker([lat, lon]).addTo(map);
+      markers[client_id] = marker;
+    }
+    markers[client_id].setLatLng([lat, lon]);
+    markers[client_id].bindPopup(`
+      <b>${client_id}</b><br>
+      🕓 ${new Date(time).toLocaleString()}<br>
+      📍 Lat: ${lat.toFixed(6)}<br>
+      📍 Lon: ${lon.toFixed(6)}<br>
+      <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Lihat di Google Maps</a>
+    `);
+  }
+
+  function drawRoute(client_id, lat, lon) {
+    routes[client_id] = routes[client_id] || [];
+    routes[client_id].push([lat, lon]);
+    if (routes[client_id].length > 1) {
+      if (routes[client_id].polyline) {
+        map.removeLayer(routes[client_id].polyline);
       }
-      markers[client_id].setLatLng([lat, lon]);
-      markers[client_id].bindPopup(`
-        <b>${client_id}</b><br>
-        Waktu: ${new Date(time).toLocaleString()}<br>
-        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Lihat di Google Maps</a>
-      `);
+      const poly = L.polyline(routes[client_id], { color: '#ff4d79' }).addTo(map);
+      routes[client_id].polyline = poly;
     }
+  }
 
-    function drawRoute(client_id, lat, lon) {
-      routes[client_id] = routes[client_id] || [];
-      routes[client_id].push([lat, lon]);
-      if (routes[client_id].length > 1) {
-        if (routes[client_id].polyline) {
-          map.removeLayer(routes[client_id].polyline);
-        }
-        const poly = L.polyline(routes[client_id], { color: '#ff4d79' }).addTo(map);
-        routes[client_id].polyline = poly;
+  async function loadInitial() {
+    const res = await fetch('/clients');
+    const data = await res.json();
+    Object.entries(data).forEach(([id, info]) => {
+      if (info.latitude && info.longitude) {
+        updateMarker(id, info.latitude, info.longitude, info.last_seen);
+        drawRoute(id, info.latitude, info.longitude);
       }
-    }
-
-    // --- Ambil data awal dari API
-    async function loadInitial() {
-      const res = await fetch('/clients');
-      const data = await res.json();
-      Object.entries(data).forEach(([id, info]) => {
-        if (info.latitude && info.longitude) {
-          updateMarker(id, info.latitude, info.longitude, info.last_seen);
-          drawRoute(id, info.latitude, info.longitude);
-        }
-      });
-      document.getElementById('status').textContent = '📡 Data awal dimuat.';
-    }
-
-    socket.emit('register', { client_id: 'admin', role: 'admin' });
-
-    socket.on('location_update', data => {
-      const { client_id, latitude, longitude, last_seen } = data;
-      updateMarker(client_id, latitude, longitude, last_seen);
-      drawRoute(client_id, latitude, longitude);
-      document.getElementById('status').textContent = `Update: ${client_id} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
     });
+    statusBox.textContent = '📡 Data awal dimuat.';
+  }
 
-    socket.on('clients_snapshot', data => {
-      Object.entries(data).forEach(([id, info]) => {
-        if (info.latitude && info.longitude) {
-          updateMarker(id, info.latitude, info.longitude, info.last_seen);
-        }
-      });
-      document.getElementById('status').textContent = '📡 Snapshot client diterima.';
+  socket.emit('register', { client_id: 'admin', role: 'admin' });
+
+  socket.on('location_update', data => {
+    const { client_id, latitude, longitude, last_seen } = data;
+    updateMarker(client_id, latitude, longitude, last_seen);
+    drawRoute(client_id, latitude, longitude);
+
+    // tampilkan koordinat di UI (Railway log dan halaman)
+    console.log(`📍 ${client_id}: ${latitude}, ${longitude}`);
+    statusBox.innerHTML = `Terbaru dari <b>${client_id}</b><br>Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`;
+  });
+
+  socket.on('clients_snapshot', data => {
+    Object.entries(data).forEach(([id, info]) => {
+      if (info.latitude && info.longitude) {
+        updateMarker(id, info.latitude, info.longitude, info.last_seen);
+      }
     });
+    statusBox.textContent = '📡 Snapshot client diterima.';
+  });
 
-    loadInitial();
-  </script>
+  loadInitial();
+</script>
+
 </body>
 </html>
