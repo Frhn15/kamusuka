@@ -2,203 +2,126 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <title>🧠 Admin Tracker Console</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>📍 Admin Pelacak</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body {
       margin: 0;
-      font-family: "Courier New", monospace;
-      display: flex;
-      height: 100vh;
-      background: radial-gradient(circle at top, #000, #001b00);
-      color: #00ff9d;
+      font-family: 'Poppins', sans-serif;
+      background: #0a0a0f;
+      color: #fff;
       overflow: hidden;
     }
-    #left {
-      width: 360px;
-      background: rgba(0, 20, 0, 0.95);
-      border-right: 2px solid #00ff88;
-      padding: 14px;
-      overflow-y: auto;
-      box-shadow: 0 0 20px rgba(0, 255, 128, 0.2);
+    #map {
+      height: 100vh;
+      width: 100%;
     }
-    h3, h4 {
-      text-align: center;
-      margin: 8px 0;
-      color: #00ff99;
-      text-shadow: 0 0 8px #00ff88;
+    .info-box {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
     }
-    .client {
-      background: rgba(0, 40, 0, 0.7);
-      border: 1px solid #00ff66;
-      border-radius: 8px;
-      padding: 8px;
-      margin-bottom: 10px;
-      box-shadow: 0 0 10px rgba(0,255,150,0.12);
-      transition: all 0.25s;
-      display: flex;
-      gap: 8px;
-      align-items: center;
+    .info-box h2 {
+      font-size: 1rem;
+      margin: 0 0 6px 0;
+      color: #ff4d79;
     }
-    .client:hover {
-      background: rgba(0, 60, 0, 0.95);
-      transform: scale(1.01);
-      box-shadow: 0 0 16px #00ff66;
+    .leaflet-popup-content-wrapper {
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      border-radius: 10px;
     }
-    .client img {
-      width: 56px;
-      height: 56px;
-      border-radius: 6px;
-      object-fit: cover;
-      border: 1px solid #00ff99;
+    .leaflet-popup-content a {
+      color: #ff9ccf;
+      text-decoration: none;
+      font-weight: bold;
     }
-    .meta {
-      flex: 1;
-      font-size: 12px;
-      color: #aaffcc;
-      line-height: 1.2;
-    }
-    .meta b { color: #ffffff; display: block; margin-bottom: 4px; }
-    .btn {
-      background:#003b1a; color:#00ff99; border:1px solid #00ff99;
-      border-radius:4px; cursor:pointer; font-size:11px;
-      padding:6px; transition:all .18s; text-align:center;
-    }
-    .btn:hover { background:#00ff99; color:#001b00; box-shadow:0 0 8px #00ff66; }
-    #streamBox { margin-top:12px; }
-    #streamFrame { width:100%; border-radius:8px; max-height:240px; background:#001000; object-fit:cover; box-shadow:0 0 12px rgba(0,255,128,0.2);}
-    #map { flex:1; height:100%; }
-    .pulse { width:18px; height:18px; background:radial-gradient(circle,#00ff99,#003300); border-radius:50%; box-shadow:0 0 15px #00ff99; animation:pulse 1.8s infinite; }
-    @keyframes pulse { 0%{transform:scale(1);opacity:.9}100%{transform:scale(2.5);opacity:0} }
   </style>
 </head>
 <body>
-  <div id="left">
-    <h3>🧠 ADMIN CONSOLE 🧠</h3>
-    <div id="clientsList">> Menunggu koneksi...</div>
-    <div id="streamBox">
-      <h4>🎥 STREAM</h4>
-      <img id="streamFrame" src="" alt="stream frame">
-    </div>
+  <div id="map"></div>
+  <div class="info-box">
+    <h2>Admin Pelacak</h2>
+    <div id="status">Menunggu data...</div>
   </div>
 
-  <div id="map"></div>
-
-  <audio id="notifSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_347a04c739.mp3" preload="auto"></audio>
-
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const socket = io();
-    socket.emit("register", { role: "admin" });
+    const map = L.map('map').setView([0, 0], 2);
 
-    // === Map ===
-    const map = L.map('map', { zoomControl: true }).setView([0,0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    const clients = {};
     const markers = {};
-    const polylines = {};
-    const notifSound = document.getElementById('notifSound');
+    const routes = {};
 
-    function playNotif(){ try{ notifSound.currentTime=0; notifSound.play(); }catch(e){} }
-
-    // === Sidebar ===
-    function renderClients() {
-      const el = document.getElementById('clientsList');
-      el.innerHTML = '';
-      const ids = Object.keys(clients);
-      if (ids.length === 0) {
-        el.textContent = '> Tidak ada koneksi aktif...';
-        return;
+    function updateMarker(client_id, lat, lon, time) {
+      if (!markers[client_id]) {
+        const marker = L.marker([lat, lon]).addTo(map);
+        markers[client_id] = marker;
       }
-      ids.forEach(id => {
-        const c = clients[id] || {};
-        const lastSeen = c.last_seen ? c.last_seen : '—';
-        const addr = c.address || 'Alamat tidak tersedia';
-        const img = c.last_image ? c.last_image : '/static/img/kucing.jpeg';
+      markers[client_id].setLatLng([lat, lon]);
+      markers[client_id].bindPopup(`
+        <b>${client_id}</b><br>
+        Waktu: ${new Date(time).toLocaleString()}<br>
+        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Lihat di Google Maps</a>
+      `);
+    }
 
-        const wrapper = document.createElement('div');
-        wrapper.className = 'client';
-        wrapper.id = `client-${id}`;
+    function drawRoute(client_id, lat, lon) {
+      routes[client_id] = routes[client_id] || [];
+      routes[client_id].push([lat, lon]);
+      if (routes[client_id].length > 1) {
+        if (routes[client_id].polyline) {
+          map.removeLayer(routes[client_id].polyline);
+        }
+        const poly = L.polyline(routes[client_id], { color: '#ff4d79' }).addTo(map);
+        routes[client_id].polyline = poly;
+      }
+    }
 
-        const imgEl = document.createElement('img');
-        imgEl.src = img;
-
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.innerHTML = `<b>${id}</b>🕓 ${lastSeen}<br>📍 ${addr}`;
-
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = '🌍 Buka';
-        btn.onclick = () => {
-          if (!c.latitude || !c.longitude) return;
-          map.flyTo([c.latitude, c.longitude], 15, { animate: true, duration: 1 });
-        };
-
-        wrapper.appendChild(imgEl);
-        wrapper.appendChild(meta);
-        wrapper.appendChild(btn);
-        el.appendChild(wrapper);
+    // --- Ambil data awal dari API
+    async function loadInitial() {
+      const res = await fetch('/clients');
+      const data = await res.json();
+      Object.entries(data).forEach(([id, info]) => {
+        if (info.latitude && info.longitude) {
+          updateMarker(id, info.latitude, info.longitude, info.last_seen);
+          drawRoute(id, info.latitude, info.longitude);
+        }
       });
+      document.getElementById('status').textContent = '📡 Data awal dimuat.';
     }
 
-    // === Marker & Rute (Polyline) ===
-    function updateMap(id, lat, lon, address) {
-      const pos = [lat, lon];
-      if (!markers[id]) {
-        markers[id] = L.marker(pos, {
-          icon: L.divIcon({ html: '<div class="pulse"></div>', className: 'customMarker', iconSize: [18,18], iconAnchor:[9,9] })
-        }).addTo(map).bindPopup(`<b>${id}</b><br>${address}`);
-        polylines[id] = L.polyline([pos], { color: '#00ff99', weight: 3, opacity: 0.8 }).addTo(map);
-        playNotif();
-      } else {
-        markers[id].setLatLng(pos).bindPopup(`<b>${id}</b><br>${address}`);
-        polylines[id].addLatLng(pos);
-      }
-      renderClients();
-    }
+    socket.emit('register', { client_id: 'admin', role: 'admin' });
 
-    // === Fetch awal ===
-    fetch('/clients').then(r=>r.json()).then(js=>{
-      Object.assign(clients, js);
-      for (const id in clients) {
-        const c = clients[id];
-        if (c.latitude && c.longitude) updateMap(id, c.latitude, c.longitude, c.address);
-      }
-    });
-
-    // === Update realtime lokasi ===
     socket.on('location_update', data => {
-      const id = data.client_id;
-      const lat = parseFloat(data.latitude);
-      const lon = parseFloat(data.longitude);
-      const addr = data.address || 'Alamat tidak diketahui';
-      clients[id] = { ...clients[id], latitude: lat, longitude: lon, address: addr, last_seen: data.last_seen };
-      updateMap(id, lat, lon, addr);
+      const { client_id, latitude, longitude, last_seen } = data;
+      updateMarker(client_id, latitude, longitude, last_seen);
+      drawRoute(client_id, latitude, longitude);
+      document.getElementById('status').textContent = `Update: ${client_id} (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
     });
 
-    // === Stream Kamera ===
-    socket.on('stream_frame', d => {
-      if (d && d.image) {
-        document.getElementById('streamFrame').src = d.image;
-      }
+    socket.on('clients_snapshot', data => {
+      Object.entries(data).forEach(([id, info]) => {
+        if (info.latitude && info.longitude) {
+          updateMarker(id, info.latitude, info.longitude, info.last_seen);
+        }
+      });
+      document.getElementById('status').textContent = '📡 Snapshot client diterima.';
     });
 
-    // Klik client → fokus di map
-    document.addEventListener('click', e => {
-      const wrapper = e.target.closest('.client');
-      if (!wrapper) return;
-      const id = wrapper.id.replace('client-', '');
-      if (markers[id]) {
-        markers[id].openPopup();
-        map.flyTo(markers[id].getLatLng(), 14, { animate: true, duration: 0.7 });
-      }
-    });
+    loadInitial();
   </script>
 </body>
 </html>

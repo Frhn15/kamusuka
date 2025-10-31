@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
 from datetime import datetime
@@ -6,12 +7,9 @@ import os
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-clients = {}
-routes = {}
+clients = {}   # client_id -> latest info
+routes = {}    # client_id -> list of {lat, lon, time}
 
-# -----------------------------
-# Halaman utama dan admin
-# -----------------------------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -20,79 +18,39 @@ def index():
 def admin():
     return render_template('admin.html')
 
-# -----------------------------
-# Menerima data lokasi
-# -----------------------------
 @app.route('/report', methods=['POST'])
 def report():
-    """Menerima data lokasi & alamat dari client"""
-    data = request.get_json()
+    data = request.get_json() or {}
     client_id = data.get('client_id')
-    lat = float(data.get('latitude', 0))
-    lon = float(data.get('longitude', 0))
-    address = data.get('address', 'Alamat tidak diketahui')
-    source = data.get('source', 'gps')
+    try:
+        lat = float(data.get('latitude', 0))
+        lon = float(data.get('longitude', 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "latitude/longitude invalid"}), 400
 
-    if not client_id or not lat or not lon:
-        return jsonify({"error": "data tidak valid"}), 400
+    if not client_id:
+        return jsonify({"error": "client_id required"}), 400
+
+    ts = datetime.utcnow().isoformat()
 
     clients[client_id] = {
         "latitude": lat,
         "longitude": lon,
-        "address": address,
-        "source": source,
-        "last_seen": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-        "last_image": clients.get(client_id, {}).get("last_image")
+        "last_seen": ts
     }
 
-    # simpan rute (track perjalanan)
-    routes.setdefault(client_id, []).append({
-        "lat": lat, "lon": lon, "time": datetime.now().isoformat()
-    })
+    routes.setdefault(client_id, []).append({"lat": lat, "lon": lon, "time": ts})
 
-    # kirim update ke admin secara realtime
+    # kirim ke semua yang terhubung (admin UI akan menerima ini)
     socketio.emit('location_update', {
         "client_id": client_id,
         "latitude": lat,
         "longitude": lon,
-        "address": address,
-        "last_seen": clients[client_id]["last_seen"]
+        "last_seen": ts
     })
 
-    return jsonify({"status": "ok"})
+    return jsonify({"status":"ok"})
 
-# -----------------------------
-# Upload gambar dari client
-# -----------------------------
-@app.route('/upload', methods=['POST'])
-def upload_image():
-    """Terima upload gambar dari client"""
-    client_id = request.form.get('client_id')
-    file = request.files.get('image')
-
-    if not client_id or not file:
-        return jsonify({"error": "invalid data"}), 400
-
-    # pastikan folder upload tersedia
-    os.makedirs("static/uploads", exist_ok=True)
-    filename = f"{client_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-    save_path = os.path.join("static/uploads", filename)
-    file.save(save_path)
-
-    # simpan data di memori client
-    clients.setdefault(client_id, {})["last_image"] = filename
-
-    # kirim notifikasi gambar baru ke admin
-    socketio.emit("stream_frame", {
-        "client_id": client_id,
-        "image": f"/static/uploads/{filename}"
-    })
-
-    return jsonify({"status": "ok", "path": f"/static/uploads/{filename}"})
-
-# -----------------------------
-# API tambahan untuk admin
-# -----------------------------
 @app.route('/clients')
 def get_clients():
     return jsonify(clients)
@@ -101,36 +59,32 @@ def get_clients():
 def get_routes():
     return jsonify(routes)
 
-# -----------------------------
-# Socket.IO Events
-# -----------------------------
 @socketio.on('register')
-def register(data):
-    cid = data.get("client_id")
-    role = data.get("role")
-    print(f"{role} terhubung: {cid}")
-
-    if role == "admin":
-        emit("clients_snapshot", clients)
-    emit("notification_sent", {"client_id": cid, "message": "Terhubung ✅"})
+def on_register(data):
+    role = data.get('role')
+    cid = data.get('client_id')
+    print(f"terhubung role={role} id={cid}")
+    if role == 'admin':
+        # kirim snapshot awal clients ke admin yang baru connect
+        emit('clients_snapshot', clients)
 
 @socketio.on('stream_frame')
-def stream_frame(data):
-    """(Deprecated) hanya jika client lama masih kirim base64"""
-    client_id = data.get("client_id")
-    image = data.get("image")
-    if client_id and image:
-        clients.setdefault(client_id, {})["last_image"] = image
-        socketio.emit("stream_frame", {"client_id": client_id, "image": image})
+def on_stream_frame(data):
+    # optional: kita simpan frame di memory, tapi tidak wajib
+    client_id = data.get('client_id')
+    image = data.get('image')
+    if not client_id or not image:
+        return
+    # simpan last image (base64) — hati2 memori jika banyak client/stream
+    clients.setdefault(client_id, {})['last_image'] = image
+    # kirim ke admin UI
+    socketio.emit('stream_frame', {"client_id": client_id, "image": image})
 
 @socketio.on('admin_send_notification')
-def send_notif(data):
-    emit("notification_sent", data)
+def on_admin_send_notification(data):
+    # terima dari admin UI, forward ke semua client (atau sesuaikan)
+    socketio.emit('notification_sent', data)
 
-# -----------------------------
-# Jalankan server
-# -----------------------------
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print(f"Server berjalan di http://localhost:{port}")
-    socketio.run(app, host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
